@@ -1,4 +1,3 @@
-````{"id":"58720","variant":"standard","title":"README – Projet dbt Les vélos de Didier (avec script start_dbt.sh)"}
 # 🚴‍♂️ Projet dbt — Les vélos de Didier
 
 ## 🏢 Contexte
@@ -90,7 +89,7 @@ git clone https://github.com/AzemoFrank/dbt_didier_bikes.git
 cd didier_bikes_dbt
 ```
 
-####ou
+#### ou
 
 #### SSH
 ```bash
