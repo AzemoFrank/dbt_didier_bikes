@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: "Commandes brutes nettoyées et typées"
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        tests:
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+
+  - name: stg_order_items
+    description: "Lignes de commande nettoyées et dédupliquées"
+    columns:
+      - name: item_id
+        tests:
+          - not_null
+      - name: order_id
+        tests:
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+      - name: product_id
+        tests:
+          - relationships:
+              to: ref('stg_products')
+              field: product_id
+
+  - name: stg_customers
+    description: "Clients référentiels nettoyés"
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - unique
+      - name: email
+        tests:
+          - not_null
+
+  - name: stg_products
+    description: "Produits et catalogue nettoyé"
+    columns:
+      - name: product_id
+        tests:
+          - not_null
+          - unique

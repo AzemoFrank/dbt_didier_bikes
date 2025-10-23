@@ -1,0 +1,43 @@
+version: 2
+
+sources:
+  - name: didier_bikes_raw
+    description: "Données brutes des ventes exposées via des fichiers CSV sur GCS"
+    schema: didier_bikes_raw
+
+    tables:
+      - name: raw_customers
+        description: "Table externe GCS -> customers"
+        external:
+          location: "gs://didier-bikes-raw/customers/*.csv"
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            field_delimiter: ","
+
+      - name: raw_orders
+        description: "Table externe GCS -> orders"
+        external:
+          location: "gs://didier-bikes-raw/orders/*.csv"
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            field_delimiter: ","
+
+      - name: raw_order_items
+        description: "Table externe GCS -> order_items"
+        external:
+          location: "gs://didier-bikes-raw/order_items/*.csv"
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            field_delimiter: ","
+
+      - name: raw_products
+        description: "Table externe GCS -> products"
+        external:
+          location: "gs://didier-bikes-raw/products/*.csv"
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            field_delimiter: ","

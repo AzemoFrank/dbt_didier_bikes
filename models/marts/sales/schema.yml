@@ -1,0 +1,23 @@
+version: 2
+
+models:
+
+  - name: fct_clients_analysis
+    description: "Analyse clients (fréquence, récence, montant)"
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - unique
+      - name: total_spent
+        tests: [not_null]
+
+  - name: fct_product_sales_analysis
+    description: "Analyse produit : volume, CA, prix moyen"
+    columns:
+      - name: product_id
+        tests:
+          - not_null
+          - unique
+      - name: total_sales
+        tests: [not_null]
