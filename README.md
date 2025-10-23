@@ -1,98 +1,147 @@
-# README — Projet dbt : Les vélos de Didier
+````{"id":"58720","variant":"standard","title":"README – Projet dbt Les vélos de Didier (avec script start_dbt.sh)"}
+# 🚴‍♂️ Projet dbt — Les vélos de Didier
 
-## 1️⃣ Contexte
+## 🏢 Contexte
 
-Les vélos de Didier est une entreprise familiale spécialisée dans la vente de vélos et d’accessoires.
-L’objectif du projet dbt est de **mettre en place des jeux de données fiables** pour :
+**Les vélos de Didier** est une entreprise familiale locale spécialisée dans la vente de vélos et d’accessoires liés au cyclisme.  
+L’objectif du projet dbt est de **centraliser, nettoyer et modéliser** les données issues des fichiers bruts afin de permettre :
 
-1. Analyser la **base client** (segmentation, fidélisation, panier moyen).
-2. Analyser les **performances produits** (ventes, chiffre d’affaires, stock).
+- Une **analyse client** (fidélisation, panier moyen, récurrence)
+- Une **analyse produit** (ventes, chiffre d’affaires, performance des gammes)
 
-Ces données alimenteront ensuite des **tableaux de bord BI** pour piloter l’activité et soutenir le développement.
+Ces modèles alimenteront des **tableaux de bord BI** (ex. Looker Studio, Power BI) pour aider à la prise de décision.
 
 ---
 
-## 2️⃣ Structure du projet
+## 🧱 Structure du projet
 
 ```text
 didier_bikes_dbt/
 ├─ models/
-│  ├─ raw/                # Tables sources brutes (externe CSV GCS)
-│  ├─ staging/            # Modèles stg_ pour nettoyage et typage
-│  └─ marts/              # Modèles marts_ pour KPIs et dashboards
-├─ macros/                # Macros et tests personnalisés
-├─ snapshots/             # Snapshots éventuels
+│  ├─ raw/                # Tables externes BigQuery pointant vers les CSV GCS
+│  ├─ staging/            # Nettoyage, typage, et jointures initiales
+│  └─ marts/              # Jeux de données finaux pour la BI (KPI, agrégats)
+├─ macros/                # Macros personnalisées et tests custom
+├─ tests/                 # Tests additionnels si besoin
+├─ snapshots/             # Snapshots d’historisation éventuels
 ├─ seeds/                 # Données statiques
-├─ tests/                 # Tests additionnels
-└─ dbt_project.yml        # Configuration du projet dbt
+├─ dbt_project.yml        # Configuration du projet dbt
+├─ packages.yml           # Dépendances dbt externes (dbt-utils, dbt-external-tables…)
+├─ requirements.txt       # Dépendances Python/dbt
+└─ start_dbt.sh           # Script automatisé de démarrage du projet
 ```
 
 ---
 
-## 3️⃣ Sources de données
+## 🔗 Sources de données
 
-* **raw_customers** : données clients
-* **raw_orders** : données commandes
-* **raw_order_items** : lignes de commande
-* **raw_products** : catalogue produits
+Les données brutes sont stockées sur **Google Cloud Storage (GCS)** sous forme de fichiers CSV.
 
-Ces tables sont **exposées depuis Google Cloud Storage (CSV)** et ingérées dans BigQuery via dbt.
+| Table | Description | Localisation |
+|-------|--------------|---------------|
+| `raw_customers` | Données clients | `gs://didier-bikes-raw/customers/*.csv` |
+| `raw_orders` | Données commandes | `gs://didier-bikes-raw/orders/*.csv` |
+| `raw_order_items` | Lignes de commande | `gs://didier-bikes-raw/order_items/*.csv` |
+| `raw_products` | Catalogue produits | `gs://didier-bikes-raw/products/*.csv` |
+
+Ces tables sont configurées via le package **`dbt-external-tables`** et matérialisées dans BigQuery.
 
 ---
 
-## 4️⃣ Modèles
+## 🧮 Modèles dbt
 
 ### Staging (`stg_`)
+- Nettoyage, typage et filtrage des données brutes.
+- Gestion des clés et relations.
 
-* `stg_customers` : nettoyage, typage, déduplication
-* `stg_orders` : conversion dates, typage
-* `stg_order_items` : déduplication sur `(order_id, product_id, item_id)`
-* `stg_products` : typage, conversion numeric
+| Modèle | Description |
+|--------|--------------|
+| `stg_customers` | Nettoyage et typage des clients |
+| `stg_orders` | Nettoyage et conversion des dates en `TIMESTAMP` |
+| `stg_order_items` | Déduplication et typage des lignes de commande |
+| `stg_products` | Standardisation des informations produits |
 
-### Mart (`marts_`)
+### Marts (`marts_`)
+- Jeux de données finaux pour la BI.
 
-* `marts_customer_kpis` : nombre de commandes, total dépensé, panier moyen, dernière commande
-* `marts_product_kpis` : ventes par produit, chiffre d’affaires, stock restant
-
----
-
-## 5️⃣ Tests dbt
-
-Tests principaux appliqués :
-
-* **Unique / Not Null** : clés primaires (`customer_id`, `order_id`, `product_id`, `item_id`)
-* **Relationships** : intégrité référentielle (`order_id → stg_orders`, `customer_id → stg_customers`, `product_id → stg_products`)
-* **Tests métiers personnalisés** : par exemple, valeurs acceptées pour `status` commandes
+| Modèle | Description |
+|--------|--------------|
+| `fct_clients_analysis` | KPIs clients : nombre de commandes, panier moyen, total dépensé |
+| `fct_product_sales_analysis` | KPIs produits : chiffre d’affaires, volume vendu, performance |
 
 ---
 
-## 6️⃣ Instructions pour exécuter le projet
+## 🧪 Tests dbt
 
-1. Installer dbt et les packages nécessaires :
+Des tests sont définis dans les fichiers `schema.yml` :
 
+### Tests de base
+- `unique` et `not_null` sur les clés primaires (`customer_id`, `order_id`, `product_id`, `item_id`)
+- `relationships` entre les tables (`order_id → stg_orders`, `product_id → stg_products`)
+
+---
+
+## ⚙️ Installation et configuration
+
+### 1️⃣ Cloner le projet
+#### HTTPS
 ```bash
-pip install dbt-bigquery dbt-utils dbt-external-tables
+git clone https://github.com/AzemoFrank/dbt_didier_bikes.git
+cd didier_bikes_dbt
 ```
 
-2. Installer les dépendances dbt :
+####ou
+
+#### SSH
+```bash
+git clone git@github.com:AzemoFrank/dbt_didier_bikes.git
+cd didier_bikes_dbt
+```
+
+### 2️⃣ Créer et activer un environnement virtuel
+
+#### Linux / macOS
+```bash
+python3 -m venv dbt-env
+source dbt-env/bin/activate
+```
+
+#### Windows (PowerShell)
+```powershell
+python -m venv dbt-env
+dbt-env\Scripts\activate
+```
+
+### 3️⃣ Installer les dépendances Python
+
+```bash
+pip install -r requirements.txt
+```
+
+> 💡 Pour régénérer ce fichier :
+> ```bash
+> pip freeze > requirements.txt
+> ```
+
+### 4️⃣ Installer les packages dbt
 
 ```bash
 dbt deps
 ```
 
-3. Exécuter les modèles :
+### 5️⃣ Exécuter le projet
 
 ```bash
 dbt run
 ```
 
-4. Lancer les tests :
+### 6️⃣ Lancer les tests
 
 ```bash
 dbt test
 ```
 
-5. Générer la documentation :
+### 7️⃣ Générer et consulter la documentation
 
 ```bash
 dbt docs generate
@@ -101,9 +150,37 @@ dbt docs serve
 
 ---
 
-## 7️⃣ Bonnes pratiques
+## 🚀 Démarrage rapide avec `start_dbt.sh`
 
-* Toujours utiliser des modèles staging pour **nettoyer et typer** les données sources.
-* Définir des **clés uniques et relations** pour garantir l’intégrité.
-* Documenter chaque colonne avec une **description et des tests**.
-* Mettre à jour le README à chaque ajout de modèle ou nouvelle source.
+Un script dédié (`start_dbt.sh`) est inclus pour automatiser le lancement du projet.  
+Ce script crée l’environnement virtuel (s’il n’existe pas), installe les dépendances et exécute dbt.
+
+### Utilisation :
+
+```bash
+chmod +x start_dbt.sh
+./start_dbt.sh
+```
+
+> 🧠 **Astuce** : ce script peut être modifié pour inclure des commandes personnalisées (par ex. `dbt run + dbt test + dbt docs generate`).
+
+---
+
+## 🧠 Bonnes pratiques
+
+- Toujours passer par un modèle **staging** avant la couche analytique.  
+- Utiliser `unique_key` pour les modèles incrémentaux.  
+- Versionner les packages dbt dans `packages.yml`.  
+- Mettre à jour `requirements.txt` à chaque nouvelle dépendance.  
+- Ajouter des **tests et descriptions** pour chaque colonne critique.  
+- Utiliser `start_dbt.sh` pour garantir un environnement cohérent entre collaborateurs.
+
+---
+
+## 📄 Auteur
+
+**Projet dbt – Les vélos de Didier**  
+Créé par : Frank Azemo  
+Version : `1.0.0`  
+Environnement : `BigQuery + GCS`  
+Script de lancement : `start_dbt.sh`
